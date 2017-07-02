@@ -8,6 +8,8 @@ const lowEvent = 'nordpool-price-low';
 const normEvent = 'nordpool-price-normal';
 const highEvent = 'nordpool-price-high';
 
+const iftttUrl = 'https://maker.ifttt.com/trigger/';
+
 // get latest prices immediately
 getPrices();
 
@@ -22,9 +24,7 @@ let cronPattern = '15 ' + priceUpdateHour + ' * * *';
 // console.log(cronPattern);
 // schedule a job to get newest prices once a day
 let getPricesJob = schedule.scheduleJob(cronPattern, getPrices);
-let hiJobs = [];
-let loJobs = [];
-let normJobs = [];
+let jobs = [];
 
 function getPrices() {
   prices.hourly(config, (error, results) => {
@@ -32,81 +32,73 @@ function getPrices() {
       console.error(error);
       return;
     }
-    // console.log(results);
-    let hiHours = [];
-    let loHours = [];
-    let normHours = [];
+    let events = [];
     let tmpHours = [];
-    var currentArray = normHours;
-    var lastArray = currentArray;
-    for (var i=0; i<results.length; i++) {
-      let date = results[i].date;
-      let price = results[i].value; // float, EUR/MWh
+    let previousEvent = normEvent;
+    results.forEach((item, index) => {
+      let price = item.value; // float, EUR/MWh
       if (price > config.highTreshold) {
-        currentArray = hiHours;
+        item.event = highEvent;
       }
       else if (price < config.lowTreshold) {
-        currentArray = loHours;
+        item.event = lowEvent;
       }
       else {
-        currentArray = normHours;
+        item.event = normEvent;
       }
-      if (currentArray !== lastArray) {
+      if (item.event != previousEvent) {
         var max = 24;
         var lo = false;
-        if (lastArray === hiHours) {
+        if (previousEvent == highEvent) {
           max = config.maxHighHours;
         }
-        else if (lastArray === loHours) {
+        else if (previousEvent == lowEvent) {
           max = config.maxLowHours;
           var lo = true;
         }
         let rf = (a, b) => a + b.value;
         if (tmpHours.length > 0) {
           let streak = findStreak(tmpHours, max, rf, lo);
-          lastArray.push(streak[0]);
-          if ((lastArray !== normHours) && (streak.length < tmpHours.length)) {
+          events.push(streak[0]);
+          if ((previousEvent != normEvent) && (streak.length < tmpHours.length)) {
             let firstIndex = streak[0].date.get('hours') - tmpHours[0].date.get('hours');
             if (firstIndex > 0) {
-              normHours.push(tmpHours[0]);
+              tmpHours[0].event = normEvent;
+              events.push(tmpHours[0]);
             }
             if (firstIndex < (tmpHours.length - streak.length)) {
-              normHours.push(tmpHours[firstIndex + streak.length]);
+              tmpHours[firstIndex + streak.length].event = normEvent;
+              events.push(tmpHours[firstIndex + streak.length]);
             }
           }
         }
-        lastArray = currentArray;
+        previousEvent = item.event;
         tmpHours = [];
       }
-      else if (i == results.length - 1) {
-        lastArray.push(tmpHours[0]);
+      else if (index == results.length - 1) {
+        events.push(tmpHours[0]);
       }
-      tmpHours.push(results[i]);
-    }
-    loHours.forEach(item => {
-      loJobs.push(schedule.scheduleJob(item.date, trigger.bind(null, lowEvent, item)));
+      tmpHours.push(item);
     });
-    normHours.forEach(item => {
-      normJobs.push(schedule.scheduleJob(item.date, trigger.bind(null, normEvent, item)));
-    });
-    hiHours.forEach(item => {
-      hiJobs.push(schedule.scheduleJob(item.date, trigger.bind(null, highEvent, item)));
+    console.log(events);
+    events.forEach(item => {
+      jobs.push(schedule.scheduleJob(item.date, trigger.bind(null, item)));
     });
   });
 }
 
-function trigger(tr, item) {
+function trigger(item) {
   let values = {
     value1: item.value,
     value2: config.currency + '/MWh',
     value3: results.date.format('H:mm')
   };
   var opts = {
-    url: 'https://maker.ifttt.com/trigger/' + tr + '/with/key/' + config.iftttKey,
+    url: iftttUrl + item.event + '/with/key/' + config.iftttKey,
     json: true,
     body: values
   };
-  console.log('POSTing ' + tr + ' warning for price ' + values.value1 + ' at ' + values.value2);
+  console.log('POSTing ' + item.event + ' warning for price ' + values.value1 + ' ' + values.value2 + ' at ' + values.value3);
   request.post(opts, function(err, res) {
     if (err) {
       console.error(err);
@@ -114,5 +106,4 @@ function trigger(tr, item) {
     }
     console.log('Success: ' + res.body)
   })
-
 }
