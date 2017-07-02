@@ -1,5 +1,6 @@
 
 # Trigger Nordpool/Elspot price change events to your IFTTT Maker Channel
+Gets day-ahead prices from [Nordpool](http://www.nordpoolspot.com/Market-data1/Elspot/)
 
 ## Installation
     npm install nordpool-ifttt
@@ -7,7 +8,7 @@
     cp config-sample.js config.js
     $EDITOR config.js
 
-Set your IFTTT maker key from [https://ifttt.com/services/maker_webhooks/settings]
+Set your IFTTT maker key from https://ifttt.com/services/maker_webhooks/settings
 
 ## Usage
 
