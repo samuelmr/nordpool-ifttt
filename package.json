@@ -26,6 +26,7 @@
   "dependencies": {
     "findstreak": "^1.1.0",
     "node-schedule": "^1.2.3",
-    "nordpool": "^1.2.0"
+    "nordpool": "^1.2.0",
+    "request": "^2.81.0"
   }
 }
