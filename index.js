@@ -82,7 +82,7 @@ function getPrices() {
     });
     console.log(events);
     events.forEach(item => {
-      jobs.push(schedule.scheduleJob(item.date, trigger.bind(null, item)));
+      jobs.push(schedule.scheduleJob(item.date.toDate(), trigger.bind(null, item)));
     });
   });
 }
