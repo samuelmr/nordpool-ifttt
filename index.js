@@ -3,6 +3,7 @@ const nordpool = require('nordpool');
 const prices = new nordpool.Prices();
 const config = require('./config');
 const findStreak = require('findstreak');
+const request = require('request');
 
 const lowEvent = 'nordpool-price-low';
 const normEvent = 'nordpool-price-normal';
@@ -80,7 +81,6 @@ function getPrices() {
       }
       tmpHours.push(item);
     });
-    console.log(events);
     events.forEach(item => {
       jobs.push(schedule.scheduleJob(item.date.toDate(), trigger.bind(null, item)));
     });
@@ -91,14 +91,14 @@ function trigger(item) {
   let values = {
     value1: item.value,
     value2: config.currency + '/MWh',
-    value3: results.date.format('H:mm')
+    value3: item.date.format('H:mm')
   };
   var opts = {
     url: iftttUrl + item.event + '/with/key/' + config.iftttKey,
     json: true,
     body: values
   };
-  console.log('POSTing ' + item.event + ' warning for price ' + values.value1 + ' ' + values.value2 + ' at ' + values.value3);
+  console.log('POSTing ' + item.event + ' event: ' + values.value1 + ' ' + values.value2 + ' at ' + values.value3);
   request.post(opts, function(err, res) {
     if (err) {
       console.error(err);
