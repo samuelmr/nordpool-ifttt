@@ -4,6 +4,7 @@
   "description": "Check Nordpool energy prices and set IFTTT triggers based on your limits",
   "main": "index.js",
   "scripts": {
+    "start": "pm2 start index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
@@ -26,7 +27,8 @@
   "dependencies": {
     "findstreak": "^1.1.0",
     "node-schedule": "^1.2.3",
-    "nordpool": "^1.2.0",
+    "nordpool": "^1.3.0",
+    "pm2": "^2.5.0",
     "request": "^2.81.0"
   }
 }

@@ -35,13 +35,7 @@ Configuration parameters:
 
 ## Usage
 
-You can simply run the index script and leave it running. It will keep pushing events to IFTTT until it gets killed.
-
-    node index.js
-
-Better option is to use a process manager like [PM2](http://pm2.keymetrics.io/) to keep the script running.
-
-    pm2 start ./index.js --name "Nordpool IFTTT trigger"
-    pm2 save
+Start script will run [PM2](http://pm2.keymetrics.io/) to keep the script running.
+    npm start
 
 Enjoy!
