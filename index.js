@@ -1,5 +1,6 @@
 const schedule = require('node-schedule');
 const nordpool = require('nordpool');
+const moment = require('moment-timezone');
 const prices = new nordpool.Prices();
 const config = require('./config');
 const findStreak = require('findstreak');
@@ -11,21 +12,17 @@ const highEvent = 'nordpool-price-high';
 
 const iftttUrl = 'https://maker.ifttt.com/trigger/';
 
+let myTZ = moment.tz.guess();
+let jobs = [];
+
 // get latest prices immediately
 getPrices();
 
 // Prices for tomorrow are published today at 12:42 CET or later
 // (http://www.nordpoolspot.com/How-does-it-work/Day-ahead-market-Elspot-/)
 // update prices at 15:15 UTC
-const d = new Date();
-const myTZoffset = Math.ceil(d.getTimezoneOffset()/60);
-let priceUpdateHour = 15 - myTZoffset;
-let cronPattern = '15 ' + priceUpdateHour + ' * * *';
-// cronPattern = [d.getMinutes()+1, d.getHours(), '*', '*', '*'].join(' ')
-// console.log(cronPattern);
-// schedule a job to get newest prices once a day
+let cronPattern = moment.tz('15:15Z', 'HH:mm:Z', myTZ).format('m H * * *');
 let getPricesJob = schedule.scheduleJob(cronPattern, getPrices);
-let jobs = [];
 
 function getPrices() {
   prices.hourly(config, (error, results) => {
@@ -47,6 +44,7 @@ function getPrices() {
       else {
         item.event = normEvent;
       }
+      item.date.tz(myTZ);
       if (item.event != previousEvent) {
         var max = 24;
         var lo = false;
@@ -81,8 +79,10 @@ function getPrices() {
       }
       tmpHours.push(item);
     });
+    // console.log(events);
     events.forEach(item => {
       jobs.push(schedule.scheduleJob(item.date.toDate(), trigger.bind(null, item)));
+      console.log(item.date.format('H:mm'), item.value, item.event)
     });
   });
 }
