@@ -47,7 +47,6 @@ function getPrices() {
       else {
         item.event = normEvent;
       }
-      console.log(item.date, item.event, item.value);
       if (item.event != previousEvent) {
         var max = 24;
         var lo = false;
