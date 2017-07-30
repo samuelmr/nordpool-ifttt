@@ -5,5 +5,6 @@ module.exports = {
   lowTreshold: 30, // send event when price < lowTreshold EUR/MWh
   maxHighHours: 24, // max consecutive high hours
   maxLowHours: 24, // max consecutive low hours
+  vatPercent: 24, // if you want prices including value-added tax (VAT), enter the percentage here
   iftttKey: 'CHANGE' // see https://ifttt.com/services/maker_webhooks/settings
 };

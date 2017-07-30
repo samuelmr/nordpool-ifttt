@@ -34,17 +34,20 @@ function getPrices() {
     let tmpHours = [];
     let previousEvent = normEvent;
     results.forEach((item, index) => {
-      let price = item.value; // float, EUR/MWh
-      if (price > config.highTreshold) {
+      item.date.tz(myTZ);
+      if (config.vatPercent) {
+          item.value = Math.round(item.value * (100 + config.vatPercent))/100;
+      }
+      if (item.value > config.highTreshold) {
         item.event = highEvent;
       }
-      else if (price < config.lowTreshold) {
+      else if (item.value < config.lowTreshold) {
         item.event = lowEvent;
       }
       else {
         item.event = normEvent;
       }
-      item.date.tz(myTZ);
+      console.log(item.date, item.event, item.value);
       if (item.event != previousEvent) {
         var max = 24;
         var lo = false;
@@ -82,7 +85,7 @@ function getPrices() {
     // console.log(events);
     events.forEach(item => {
       jobs.push(schedule.scheduleJob(item.date.toDate(), trigger.bind(null, item)));
-      console.log(item.date.format('H:mm'), item.value, item.event)
+      console.log(item.date.format('D.M. H:mm'), item.value, item.event)
     });
   });
 }
