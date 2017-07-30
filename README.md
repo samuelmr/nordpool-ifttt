@@ -36,6 +36,7 @@ Configuration parameters:
 ## Usage
 
 Start script will run [PM2](http://pm2.keymetrics.io/) to keep the script running.
+
     npm start
 
 Enjoy!
