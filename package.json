@@ -4,7 +4,7 @@
   "description": "Check Nordpool energy prices and set IFTTT triggers based on your limits",
   "main": "index.js",
   "scripts": {
-    "start": "pm2 start index.js --name 'Nordpool IFTTT trigger'",
+    "start": "pm2 startOrRestart pm2.json",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
