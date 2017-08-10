@@ -20,8 +20,10 @@ getPrices();
 
 // Prices for tomorrow are published today at 12:42 CET or later
 // (http://www.nordpoolspot.com/How-does-it-work/Day-ahead-market-Elspot-/)
-// update prices at 15:15 UTC
-let cronPattern = moment.tz('15:15Z', 'HH:mm:Z', myTZ).format('m H * * *');
+// update prices at 13:00 UTC
+let cronPattern = moment.tz('13:00Z', 'HH:mm:Z', myTZ).format('m H * * *');
+// cronPattern = '* */12 * * *';
+// console.log(cronPattern);
 let getPricesJob = schedule.scheduleJob(cronPattern, getPrices);
 
 function getPrices() {
@@ -36,7 +38,7 @@ function getPrices() {
     results.forEach((item, index) => {
       item.date.tz(myTZ);
       if (config.vatPercent) {
-          item.value = Math.round(item.value * (100 + config.vatPercent))/100;
+        item.value = Math.round(item.value * (100 + config.vatPercent))/100;
       }
       if (item.value > config.highTreshold) {
         item.event = highEvent;
