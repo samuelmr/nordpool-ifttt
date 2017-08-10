@@ -49,6 +49,7 @@ function getPrices() {
       else {
         item.event = normEvent;
       }
+      // treshold crossed; let's see what we have stored...
       if (item.event != previousEvent) {
         var max = 24;
         var lo = false;
@@ -60,27 +61,41 @@ function getPrices() {
           var lo = true;
         }
         let rf = (a, b) => a + b.value;
+        // stored values exist
         if (tmpHours.length > 0) {
+          // find correct number of hours
           let streak = findStreak(tmpHours, max, rf, lo);
-          events.push(streak[0]);
+          // no events for the first normal streak 
+          if ((events.length > 0) || (previousEvent != normEvent)) {
+            // create an event from the first hour in the streak
+            events.push(streak[0]);
+          }
+          // if only some of the stored hours were included in the streak,
+          // mark the rest of the hours as normal and trigger events
           if ((previousEvent != normEvent) && (streak.length < tmpHours.length)) {
             let firstIndex = streak[0].date.get('hours') - tmpHours[0].date.get('hours');
+            let lastIndex = firstIndex + streak.length;
+            // hours were clipped from the beginning of stored hours
             if (firstIndex > 0) {
               tmpHours[0].event = normEvent;
               events.push(tmpHours[0]);
             }
-            if (firstIndex < (tmpHours.length - streak.length)) {
-              tmpHours[firstIndex + streak.length].event = normEvent;
-              events.push(tmpHours[firstIndex + streak.length]);
+            // hours were clipped from the end of stored hours
+            if (tmpHours.length > lastIndex) {
+              tmpHours[lastIndex].event = normEvent;
+              events.push(tmpHours[lastIndex]);
             }
           }
         }
+        // start a new treshold interval
         previousEvent = item.event;
         tmpHours = [];
       }
+      // last hour in the Nordpool results, create event at the first stored hour
       else if (index == results.length - 1) {
         events.push(tmpHours[0]);
       }
+      // store all items in the current treshold interval
       tmpHours.push(item);
     });
     // console.log(events);
