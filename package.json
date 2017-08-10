@@ -25,11 +25,11 @@
   },
   "homepage": "https://github.com/samuelmr/nordpool-ifttt#readme",
   "dependencies": {
-    "findstreak": "^1.1.0",
+    "findstreak": "^1.1.1",
     "moment-timezone": "^0.5.13",
     "node-schedule": "^1.2.3",
     "nordpool": "^2.0.0",
-    "pm2": "^2.5.0",
+    "pm2": "latest",
     "request": "^2.81.0"
   }
 }
