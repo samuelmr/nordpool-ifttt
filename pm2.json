@@ -1,0 +1,8 @@
+{
+  "apps" : [{
+    "name": "Nordpool IFTTT trigger",
+    "script": "./index.js",
+    "watch": false,
+    "instances": 1
+  }]
+}
