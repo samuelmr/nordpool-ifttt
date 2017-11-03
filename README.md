@@ -39,4 +39,19 @@ Start script will run [PM2](http://pm2.keymetrics.io/) to keep the script runnin
 
     npm start
 
+## IFTTT Usage example
+
+- Go to https://ifttt.com/create/
+- Select `+this`
+- Type `webhook` into the "Search services" search field
+- Select the Webhooks icon
+- Select `Receive a web request`
+- Enter `nordpool-price-high` into `Event name` field (or `nordpool-price-low`or `nordpool-price-normal`)
+- Select `Create trigger`
+- Select `+that`
+- Search for the service that should react to the energy price event, e.g. `Telldus Live!`
+- Choose the action for the service you selected, e.g. `Turn off a device`
+- Configure the action if needed, e.g. select the device
+- Choose `Create action`
+
 Enjoy!
