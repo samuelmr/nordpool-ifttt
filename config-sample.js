@@ -1,4 +1,4 @@
-module.exports = {
+const config = {
   area: 'FI', // see http://www.nordpoolspot.com/maps/
   currency: 'EUR', // can also be 'DKK', 'NOK', 'SEK'
   highTreshold: 60, // send event when price > highTreshold EUR/MWh
@@ -8,3 +8,5 @@ module.exports = {
   vatPercent: 24, // if you want prices including value-added tax (VAT), enter the percentage here
   iftttKey: 'CHANGE' // see https://ifttt.com/services/maker_webhooks/settings
 };
+
+export {config};
