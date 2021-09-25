@@ -1,42 +1,30 @@
-const schedule = require('node-schedule');
-const nordpool = require('nordpool');
-const moment = require('moment-timezone');
-const prices = new nordpool.Prices();
-const config = require('./config');
-const findStreak = require('findstreak');
-const request = require('request');
+import schedule from 'node-schedule';
+import {nordpool} from 'nordpool';
+import moment from 'moment-timezone';
+import {config} from './config.js';
+import findStreak from 'findstreak';
+import request from 'request';
 
-const lowEvent = 'nordpool-price-low';
-const normEvent = 'nordpool-price-normal';
-const highEvent = 'nordpool-price-high';
+const prices = new nordpool.Prices();
+const lowEvent = 'nordpool_price_low';
+const normEvent = 'nordpool_price_normal';
+const highEvent = 'nordpool_price_high';
 
 const iftttUrl = 'https://maker.ifttt.com/trigger/';
 
 let myTZ = moment.tz.guess();
 let jobs = [];
 
-// get latest prices immediately
-getPrices();
-
-// Prices for tomorrow are published today at 12:42 CET or later
-// (http://www.nordpoolspot.com/How-does-it-work/Day-ahead-market-Elspot-/)
-// update prices at 13:00 UTC
-let cronPattern = moment.tz('13:00Z', 'HH:mm:Z', myTZ).format('m H * * *');
-// cronPattern = '* */12 * * *';
-// console.log(cronPattern);
-let getPricesJob = schedule.scheduleJob(cronPattern, getPrices);
-
-function getPrices() {
-  prices.hourly(config, (error, results) => {
-    if (error) {
-      console.error(error);
-      return;
-    }
+const getPrices = async () => {
+  console.log(config);
+  try {
+    const results = await prices.hourly(config);
+    console.log(results);
     let events = [];
     let tmpHours = [];
     let previousEvent = normEvent;
     results.forEach((item, index) => {
-      item.date.tz(myTZ);
+      item.date = moment(item.date).tz(myTZ);
       if (config.vatPercent) {
         item.value = Math.round(item.value * (100 + config.vatPercent))/100;
       }
@@ -65,7 +53,7 @@ function getPrices() {
         if (tmpHours.length > 0) {
           // find correct number of hours
           let streak = findStreak(tmpHours, max, rf, lo);
-          // no events for the first normal streak 
+          // no events for the first normal streak
           if ((events.length > 0) || (previousEvent != normEvent)) {
             // create an event from the first hour in the streak
             events.push(streak[0]);
@@ -86,6 +74,10 @@ function getPrices() {
               events.push(tmpHours[lastIndex]);
             }
           }
+          // last hour in the Nordpool results
+          else if (index == results.length - 1) {
+            events.push(item);
+          }
         }
         // start a new treshold interval
         previousEvent = item.event;
@@ -98,13 +90,28 @@ function getPrices() {
       // store all items in the current treshold interval
       tmpHours.push(item);
     });
-    // console.log(events);
+    console.log(events);
     events.forEach(item => {
       jobs.push(schedule.scheduleJob(item.date.toDate(), trigger.bind(null, item)));
       console.log(item.date.format('D.M. H:mm'), item.value, item.event)
     });
-  });
+  }
+  catch (error) {
+    throw new Error(error);
+    return;
+  }
 }
+
+// get latest prices immediately
+getPrices();
+
+// Prices for tomorrow are published today at 12:42 CET or later
+// (http://www.nordpoolspot.com/How-does-it-work/Day-ahead-market-Elspot-/)
+// update prices at 13:00 UTC
+let cronPattern = moment.tz('13:00Z', 'HH:mm:Z', myTZ).format('m H * * *');
+// cronPattern = '* */12 * * *';
+// console.log(cronPattern);
+let getPricesJob = schedule.scheduleJob(cronPattern, getPrices);
 
 function trigger(item) {
   let values = {
@@ -117,7 +124,7 @@ function trigger(item) {
     json: true,
     body: values
   };
-  console.log('POSTing ' + item.event + ' event: ' + values.value1 + ' ' + values.value2 + ' at ' + values.value3);
+  console.log('Triggering ' + item.event + ' event: ' + JSON.stringify(values));
   request.post(opts, function(err, res) {
     if (err) {
       console.error(err);
