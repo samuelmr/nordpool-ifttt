@@ -15,26 +15,55 @@ const iftttUrl = 'https://maker.ifttt.com/trigger/';
 let myTZ = moment.tz.guess();
 let jobs = [];
 
-const getPrices = async () => {
-  console.log(config);
+if (config.debugLevel > 1) console.log(`Config:\n${JSON.stringify(config, null, 1)}`);
+
+// get latest prices immediately
+getPrices('today');
+
+// Prices for tomorrow are published today at 12:42 CET or later
+// (http://www.nordpoolspot.com/How-does-it-work/Day-ahead-market-Elspot-/)
+// update prices at 13:00 UTC
+let cronPattern = moment.tz('13:00Z', 'HH:mm:Z', myTZ).format('m H * * *');
+// cronPattern = '* */12 * * *';
+// console.log(cronPattern);
+let getPricesJob = schedule.scheduleJob(cronPattern, getPrices.bind(null, 'tomorrow'));
+
+
+
+async function getPrices(dayName) {
+  if (config.debugLevel > 1) console.log(`Getting prices for ${dayName}`);
+  const date = moment(new Date());
+  if (dayName == 'tomorrow') {
+    date.add(1, 'day');
+  }
   try {
-    const results = await prices.hourly(config);
-    console.log(results);
+    const opts = {
+      area: config.area,
+      currency: config.currency,
+      date: date
+    };
+    if (config.debugLevel > 3) console.log(`opts:\n${JSON.stringify(opts, null, 1)}`);
+    const results = await prices.hourly(opts);
+    if (config.debugLevel > 2) console.log(`results:\n${JSON.stringify(results, null, 1)}`);
     let events = [];
     let tmpHours = [];
     let previousEvent = normEvent;
     results.forEach((item, index) => {
       item.date = moment(item.date).tz(myTZ);
       if (config.vatPercent) {
-        item.value = Math.round(item.value * (100 + config.vatPercent))/100;
+          item.value = item.value * (100 + config.vatPercent) / 100;
       }
+      item.value = Math.round(item.value * 100)/1000; // Eur/MWh to cents/kWh
       if (item.value > config.highTreshold) {
+        if (config.debugLevel > 1) console.log(`${item.date}: ${item.value} > ${config.highTreshold}`);
         item.event = highEvent;
       }
       else if (item.value < config.lowTreshold) {
+        if (config.debugLevel > 1) console.log(`${item.date}: ${item.value} < ${config.lowTreshold}`);
         item.event = lowEvent;
       }
       else {
+        if (config.debugLevel > 1) console.log(`${item.date}: ${config.lowTreshold} < ${item.value} < ${config.highTreshold}`);
         item.event = normEvent;
       }
       // treshold crossed; let's see what we have stored...
@@ -53,6 +82,7 @@ const getPrices = async () => {
         if (tmpHours.length > 0) {
           // find correct number of hours
           let streak = findStreak(tmpHours, max, rf, lo);
+          if (config.debugLevel > 3) console.log(`streak:\n${JSON.stringify(streak, null, 1)}`);
           // no events for the first normal streak
           if ((events.length > 0) || (previousEvent != normEvent)) {
             // create an event from the first hour in the streak
@@ -79,6 +109,9 @@ const getPrices = async () => {
             events.push(item);
           }
         }
+        else {
+          // events.push(item);
+        }
         // start a new treshold interval
         previousEvent = item.event;
         tmpHours = [];
@@ -90,10 +123,10 @@ const getPrices = async () => {
       // store all items in the current treshold interval
       tmpHours.push(item);
     });
-    console.log(events);
+    if (config.debugLevel > 2) console.log(`events:\n${JSON.stringify(events, null, 1)}`);
     events.forEach(item => {
       jobs.push(schedule.scheduleJob(item.date.toDate(), trigger.bind(null, item)));
-      console.log(item.date.format('D.M. H:mm'), item.value, item.event)
+      if (config.debugLevel > 0) console.log(item.date.format('D.M. H:mm'), item.value, item.event);
     });
   }
   catch (error) {
@@ -102,21 +135,10 @@ const getPrices = async () => {
   }
 }
 
-// get latest prices immediately
-getPrices();
-
-// Prices for tomorrow are published today at 12:42 CET or later
-// (http://www.nordpoolspot.com/How-does-it-work/Day-ahead-market-Elspot-/)
-// update prices at 13:00 UTC
-let cronPattern = moment.tz('13:00Z', 'HH:mm:Z', myTZ).format('m H * * *');
-// cronPattern = '* */12 * * *';
-// console.log(cronPattern);
-let getPricesJob = schedule.scheduleJob(cronPattern, getPrices);
-
 function trigger(item) {
   let values = {
-    value1: item.value,
-    value2: config.currency + '/MWh',
+    value1: item.value.toFixed(3),
+    value2: config.currencySubUnit + '/kWh',
     value3: item.date.format('H:mm')
   };
   var opts = {
