@@ -31,8 +31,8 @@ let getPricesJob = schedule.scheduleJob(cronPattern, getPrices.bind(null, 'tomor
 
 
 async function getPrices(dayName) {
-  if (config.debugLevel > 1) console.log(`Getting prices for ${dayName}`);
   const date = moment(new Date());
+  if (config.debugLevel > 0) console.log(`${date.format()}: Getting prices for ${dayName}`);
   if (dayName == 'tomorrow') {
     date.add(1, 'day');
   }
