@@ -1,6 +1,6 @@
 {
   "name": "nordpool-ifttt",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Check Nordpool energy prices and set IFTTT triggers based on your limits",
   "main": "index.js",
   "type": "module",
