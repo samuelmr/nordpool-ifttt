@@ -1,11 +1,11 @@
 import schedule from 'node-schedule';
-import {nordpool} from 'nordpool';
+import {Prices} from 'nordpool'
 import moment from 'moment-timezone';
 import {config} from './config.js';
 import findStreak from 'findstreak';
 import request from 'request';
 
-const prices = new nordpool.Prices();
+const prices = new Prices()
 const lowEvent = 'nordpool_price_low';
 const normEvent = 'nordpool_price_normal';
 const highEvent = 'nordpool_price_high';
